@@ -6,6 +6,7 @@ export interface FieldDefinition {
   width?: number; min?: number; max?: number; maxLength?: number;
 }
 export interface BusinessRecord {
+  [key: string]: string | number;
   id: string; code: string; name: string; status: string; owner: string;
   category: string; amount: number; date: string; notes: string;
   updatedAt: string; version: number;

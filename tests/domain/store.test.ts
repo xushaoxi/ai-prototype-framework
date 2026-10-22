@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createStore, STORAGE_KEY } from '../../src/mocks/store';
+import { modules } from '../../src/modules/registry';
+import type { BusinessRecord } from '../../src/core/types';
 import { assetModule } from '../../src/modules/assets/definition';
 
 class MemoryStorage implements Storage {
@@ -112,4 +114,85 @@ describe('T01 store: ASSET-CRUD/QUERY/STATE/PERSIST and COMMON-DATA', () => {
     const badCases = ['{bad', 'x'.repeat(2 * 1024 * 1024 + 1), JSON.stringify({ ...data, schemaVersion: 99 }), JSON.stringify({ ...data, records: { ...data.records, mystery: [] } }), JSON.stringify({ ...data, records: { ...data.records, assets: [...data.records.assets, data.records.assets[0]] } }), JSON.stringify({ ...data, history: [{ id: 'h1', recordId: 'missing', moduleId: 'assets', action: 'update', at: 'bad', summary: 'bad' }] })];
     for (const text of badCases) { expect(() => next.importData(text)).toThrow(); expect(next.exportData()).toBe(exported); }
   });
+  it('refreshes sequential shared stores before reads and writes and rejects stale versions', () => {
+    const storage = new MemoryStorage(); const a = createStore(storage); const b = createStore(storage);
+    const first = a.get('assets', 'asset-1'); const stale = b.get('assets', first.id);
+    const changed = a.update('assets', first.id, { name: '甲窗口修改', version: first.version });
+    expect(() => b.update('assets', first.id, { name: '乙窗口过期修改', version: stale.version })).toThrowError(expect.objectContaining({ code: 'VERSION_CONFLICT' }));
+    expect(() => b.transition('assets', first.id, 'activate', stale.version)).toThrowError(expect.objectContaining({ code: 'VERSION_CONFLICT' }));
+    expect(b.get('assets', first.id).name).toBe(changed.name);
+    const second = b.get('assets', 'asset-2'); b.update('assets', second.id, { name: '乙窗口另一条记录', version: second.version });
+    a.create('vendors', { ...input, category: '技术服务' });
+    expect(createStore(storage).get('assets', first.id).name).toBe('甲窗口修改');
+    expect(a.get('assets', second.id).name).toBe('乙窗口另一条记录'); expect(b.list('vendors').total).toBe(13);
+  });
+  it('validates special business rules before state transitions and preserves histories on rejection', () => {
+    const s = fresh(); const r = s.create('assets', input); const before = s.exportData();
+    assetModule.validate = (values): Record<string, string> => values.id === r.id && values.status === 'active' ? { status: '需要专项审批' } : {};
+    try { expect(() => s.transition('assets', r.id, 'activate', r.version)).toThrowError(expect.objectContaining({ fields: { status: '需要专项审批' } })); expect(s.exportData()).toBe(before); }
+    finally { delete assetModule.validate; }
+  });
+  it('rejects unsafe imported numbering atomically and refuses to increment exhausted safe codes', () => {
+    const s = fresh(); const before = s.exportData(); const parsed = JSON.parse(before) as { records: Record<string, BusinessRecord[]> };
+    for (const suffix of ['9007199254740992', '0009007199254740992']) {
+      parsed.records.assets[0].code = `AST-2026-${suffix}`;
+      expect(() => s.importData(JSON.stringify(parsed))).toThrow(); expect(s.exportData()).toBe(before);
+    }
+    parsed.records.assets[0].code = 'AST-2026-9007199254740991'; s.importData(JSON.stringify(parsed)); const full = s.exportData();
+    expect(() => s.create('assets', input)).toThrow(); expect(s.exportData()).toBe(full);
+  });
+  it('keeps successful near-limit snapshots reopenable and rejects an audited mutation beyond 2MB atomically', () => {
+    const storage = new MemoryStorage(); const s = createStore(storage);
+    const parsed = JSON.parse(s.exportData()) as { records: Record<string, BusinessRecord[]>; history: unknown[] };
+    const template = parsed.records.assets[0]; parsed.records.assets = []; parsed.records.vendors = []; parsed.history = [];
+    let bytes = new TextEncoder().encode(JSON.stringify(parsed)).byteLength;
+    for (let i = 0; bytes < 2 * 1024 * 1024 - 1200; i++) {
+      const record = { ...template, id: `bulk-${i}`, code: `AST-2026-${String(i + 1).padStart(3, '0')}`, notes: '中'.repeat(500) };
+      const added = new TextEncoder().encode(JSON.stringify(record)).byteLength + (i ? 1 : 0);
+      if (bytes + added > 2 * 1024 * 1024 - 1200) break;
+      parsed.records.assets.push(record); bytes += added;
+    }
+    // Fill the remaining bytes using valid audit summaries so the following create crosses the limit.
+    const first = parsed.records.assets[0];
+    parsed.history.push({ id: 'boundary-history', recordId: first.id, moduleId: 'assets', action: 'create', at: first.updatedAt, summary: '导入历史' });
+    const spare = 2 * 1024 * 1024 - new TextEncoder().encode(JSON.stringify(parsed)).byteLength - 400;
+    (parsed.history[0] as { summary: string }).summary += 'x'.repeat(spare);
+    s.importData(JSON.stringify(parsed)); const before = s.exportData(); const saved = storage.getItem(STORAGE_KEY);
+    expect(new TextEncoder().encode(before).byteLength).toBeLessThanOrEqual(2 * 1024 * 1024);
+    expect(createStore(storage).exportData()).toBe(before); const restored = fresh(); restored.importData(before); expect(restored.exportData()).toBe(before);
+    expect(() => s.create('assets', { ...input, notes: '中'.repeat(500) })).toThrowError(expect.objectContaining({ code: 'STORAGE_LIMIT' }));
+    expect(s.exportData()).toBe(before); expect(storage.getItem(STORAGE_KEY)).toBe(saved);
+    let auditLimitReached = false;
+    for (let i = 0; i < 5; i++) {
+      const checkpoint = s.exportData(); const current = s.get('assets', first.id);
+      try { s.update('assets', first.id, { version: current.version, name: current.name }); }
+      catch (error) { expect(error).toMatchObject({ code: 'STORAGE_LIMIT' }); expect(s.exportData()).toBe(checkpoint); auditLimitReached = true; break; }
+      expect(createStore(storage).exportData()).toBe(s.exportData());
+    }
+    expect(auditLimitReached).toBe(true);
+  });
+  it('migrates persisted missing newly registered modules while explicit backups remain exact', () => {
+    const storage = new MemoryStorage(); const s = createStore(storage); const r = s.create('assets', input); const backup = s.exportData();
+    modules.push({ ...assetModule, id: 'locations', name: '地点台账', codePrefix: 'LOC' });
+    try {
+      const next = createStore(storage); expect(next.get('assets', r.id).name).toBe(input.name); expect(next.list('locations').total).toBe(0);
+      expect(s.list('locations').total).toBe(0); expect(() => next.importData(backup)).toThrow();
+      expect(next.get('assets', r.id).name).toBe(input.name);
+    } finally { modules.pop(); }
+  });
+  it('accepts only declared scalar fields and validates configured types through create, update and import', () => {
+    const s = fresh(); const empty = JSON.parse(s.exportData()) as { records: Record<string, BusinessRecord[]> }; empty.records.assets = []; s.importData(JSON.stringify(empty));
+    const previous = assetModule.fields;
+    assetModule.fields = [...previous, { key: 'contactPhone', label: '联系电话', type: 'text', required: true, maxLength: 20 }, { key: 'expiry', label: '到期日期', type: 'date' }, { key: 'seats', label: '席位数', type: 'number', min: 1, max: 100 }, { key: 'channel', label: '渠道', type: 'select', options: [{ label: '直采', value: 'direct' }] }];
+    try {
+      const r = s.create('assets', { ...input, contactPhone: '13800000000', expiry: '', seats: 3, channel: '' });
+      const changed = s.update('assets', r.id, { version: 1, expiry: '2027-01-31', contactPhone: '13900000000' });
+      const text = s.exportData(); const other = fresh(); other.importData(text); expect(other.get('assets', r.id)).toEqual(changed);
+      for (const bad of [{ contactPhone: '' }, { contactPhone: 123 }, { expiry: '2027-02-30' }, { seats: '3' }, { seats: 0 }, { channel: 'bad' }, { mystery: 'undeclared' }]) expect(() => s.create('assets', { ...input, contactPhone: '13800000000', ...bad })).toThrow();
+      expect(() => s.update('assets', r.id, { version: changed.version, contactPhone: 123 })).toThrow();
+      const invalid = JSON.parse(text) as { records: Record<string, BusinessRecord[]> }; invalid.records.assets[0].expiry = 2027;
+      expect(() => s.importData(JSON.stringify(invalid))).toThrow(); expect(s.get('assets', r.id)).toEqual(changed);
+    } finally { assetModule.fields = previous; }
+  });
+
 });

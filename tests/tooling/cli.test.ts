@@ -55,6 +55,37 @@ describe('TOOL-001 安全复制与生成', () => {
     expect(run('check-spec.mjs', [], destination).status).not.toBe(0);
   }, 120000);
 
+  it('不同合法 slug 生成独立导出，连续生成后规范和构建均通过', () => {
+    const destination = join(temp(), 'slug-demo');
+    expect(run('create-project.mjs', [destination]).status).toBe(0);
+    symlinkSync(join(root, 'node_modules'), join(destination, 'node_modules'), 'dir');
+    for (const slug of ['a-1', 'a1']) {
+      const generated = run('generate-module.mjs', [slug, '业务'], destination);
+      expect(generated.status, generated.stderr).toBe(0);
+    }
+    const checked = run('check-spec.mjs', [], destination);
+    expect(checked.status, checked.stderr).toBe(0);
+    const build = spawnSync('npm', ['run', 'build'], { cwd: destination, encoding: 'utf8', timeout: 90000 });
+    expect(build.status, build.stdout + build.stderr).toBe(0);
+  }, 120000);
+
+  it('模板带业务校验函数仍可生成，且新模块不继承资产特定规则', () => {
+    const destination = join(temp(), 'hook-demo');
+    expect(run('create-project.mjs', [destination]).status).toBe(0);
+    symlinkSync(join(root, 'node_modules'), join(destination, 'node_modules'), 'dir');
+    const definitionPath = join(destination, 'src/modules/assets/definition.ts');
+    writeFileSync(definitionPath, readFileSync(definitionPath, 'utf8') + "\nassetModule.validate = () => ({ name: 'asset-only validation' });\n");
+    const generated = run('generate-module.mjs', ['contracts', '合同'], destination);
+    expect(generated.status, generated.stderr).toBe(0);
+    const checked = run('check-spec.mjs', [], destination);
+    expect(checked.status, checked.stderr).toBe(0);
+    writeFileSync(join(destination, 'check-hook.mjs'), "import {loadProjectModule} from './scripts/project-modules.mjs'; const {modules} = await loadProjectModule(process.cwd()); if(modules.find(module=>module.id==='assets').validate({}).name!=='asset-only validation') process.exit(1); if(modules.find(module=>module.id==='contracts').validate!==undefined) process.exit(2);");
+    const hook = spawnSync(process.execPath, ['check-hook.mjs'], { cwd: destination, encoding: 'utf8' });
+    expect(hook.status, hook.stderr).toBe(0);
+    const build = spawnSync('npm', ['run', 'build'], { cwd: destination, encoding: 'utf8', timeout: 90000 });
+    expect(build.status, build.stdout + build.stderr).toBe(0);
+  }, 120000);
+
   it('存在孤立规范时拒绝生成且不会部分写入', () => {
     const destination = join(temp(), 'atomic-demo');
     expect(run('create-project.mjs', [destination]).status).toBe(0);

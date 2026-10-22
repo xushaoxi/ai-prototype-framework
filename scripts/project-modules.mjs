@@ -28,6 +28,10 @@ export async function loadProjectModule(root, entry = 'src/modules/registry.ts')
           const specifier = child.moduleSpecifier.text.replace(/\.tsx?$/, '') + '.mjs';
           return ts.factory.updateImportDeclaration(child, child.modifiers, child.importClause, ts.factory.createStringLiteral(specifier), child.attributes);
         }
+        if (ts.isExportDeclaration(child) && child.moduleSpecifier && ts.isStringLiteral(child.moduleSpecifier)) {
+          const specifier = child.moduleSpecifier.text.replace(/\.tsx?$/, '') + '.mjs';
+          return ts.factory.updateExportDeclaration(child, child.modifiers, child.isTypeOnly, child.exportClause, ts.factory.createStringLiteral(specifier), child.attributes);
+        }
         return ts.visitEachChild(child, visitor, context);
       })] },
     });

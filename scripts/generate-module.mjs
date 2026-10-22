@@ -19,7 +19,12 @@ try {
   let prefix = slug.replace(/-/g, '').slice(0, 6).toUpperCase();
   const basePrefix = prefix; let suffix = 2;
   while (modules.some(module => module.codePrefix === prefix)) prefix = basePrefix + suffix++;
-  const module = structuredClone(base);
+  // A business-specific validate hook belongs only to the source module.
+  const module = structuredClone({
+    id: base.id, name: base.name, singularName: base.singularName, description: base.description,
+    icon: base.icon, codePrefix: base.codePrefix, fields: base.fields, statuses: base.statuses,
+    actions: base.actions, defaultValues: base.defaultValues,
+  });
   Object.assign(module, { id: slug, name: `${title}台账`, singularName: title, description: `统一管理${title}信息，跟踪登记、启用与归档过程。`, codePrefix: prefix });
   module.fields = module.fields.map(field => ({ ...field, label: field.label.replaceAll('资产', title) }));
   module.statuses = [{ value: 'draft', label: '草稿', color: 'default' }, { value: 'active', label: '已启用', color: 'green' }, { value: 'archived', label: '已归档', color: 'default' }];
@@ -32,7 +37,7 @@ try {
   const registryPath = join(root, 'src/modules/registry.ts'); const original = readFileSync(registryPath, 'utf8');
   const array = /export\s+const\s+modules\s*:\s*ModuleDefinition\[\]\s*=\s*\[([^\]]*)\]/;
   if (!array.test(original)) throw new Error('registry 格式无法安全更新，请保留标准 modules 数组');
-  const identifier = `generated${slug.replace(/-([a-z0-9])/g, (_, character) => character.toUpperCase())}Module`;
+  const identifier = `generated_${slug.replaceAll('-', '_')}_Module`;
   const updated = `import { ${identifier} } from './${slug}/definition';\n` + original.replace(array, (_, members) => `export const modules: ModuleDefinition[] = [${members.trim()}${members.trim() ? ', ' : ''}${identifier}]`);
   if (dryRun) { console.log(`预览：新增 ${modulePath}/definition.ts\n新增 ${specPath}\n更新 ${registryPath}\n不写入任何文件。`); }
   else {

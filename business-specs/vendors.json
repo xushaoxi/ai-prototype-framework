@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "id": "vendors",
+  "name": "供应商台账",
+  "template": "T01",
+  "codePrefix": "VEN",
+  "fields": [
+    {
+      "key": "code",
+      "label": "供应商编号",
+      "type": "text",
+      "inTable": true,
+      "inForm": false,
+      "inDetail": true,
+      "width": 154,
+      "required": false
+    },
+    {
+      "key": "name",
+      "label": "供应商名称",
+      "type": "text",
+      "required": true,
+      "searchable": true,
+      "inTable": true,
+      "inForm": true,
+      "inDetail": true,
+      "maxLength": 80,
+      "width": 200
+    },
+    {
+      "key": "category",
+      "label": "合作类别",
+      "type": "select",
+      "required": true,
+      "searchable": true,
+      "inTable": true,
+      "inForm": true,
+      "inDetail": true,
+      "options": [
+        {
+          "label": "设备供应",
+          "value": "设备供应"
+        },
+        {
+          "label": "技术服务",
+          "value": "技术服务"
+        },
+        {
+          "label": "行政服务",
+          "value": "行政服务"
+        },
+        {
+          "label": "其他",
+          "value": "其他"
+        }
+      ]
+    },
+    {
+      "key": "owner",
+      "label": "对接人",
+      "type": "text",
+      "required": true,
+      "searchable": true,
+      "inTable": true,
+      "inForm": true,
+      "inDetail": true,
+      "maxLength": 30
+    },
+    {
+      "key": "amount",
+      "label": "合同金额",
+      "type": "number",
+      "required": true,
+      "inTable": true,
+      "inForm": true,
+      "inDetail": true,
+      "min": 0,
+      "max": 999999999
+    },
+    {
+      "key": "date",
+      "label": "登记日期",
+      "type": "date",
+      "required": true,
+      "inTable": true,
+      "inForm": true,
+      "inDetail": true
+    },
+    {
+      "key": "notes",
+      "label": "合作备注",
+      "type": "textarea",
+      "inTable": false,
+      "inForm": true,
+      "inDetail": true,
+      "maxLength": 500,
+      "required": false
+    }
+  ],
+  "statuses": [
+    {
+      "value": "pending",
+      "label": "待评估"
+    },
+    {
+      "value": "active",
+      "label": "合作中"
+    },
+    {
+      "value": "disabled",
+      "label": "已停用"
+    }
+  ],
+  "actions": [
+    {
+      "key": "approve",
+      "from": [
+        "pending"
+      ],
+      "to": "active"
+    },
+    {
+      "key": "disable",
+      "from": [
+        "active"
+      ],
+      "to": "disabled"
+    },
+    {
+      "key": "reopen",
+      "from": [
+        "disabled"
+      ],
+      "to": "pending"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "VEN-001",
+      "acceptance": "关键词、状态、类别组合查询与分页正确"
+    },
+    {
+      "id": "VEN-002",
+      "acceptance": "新增校验必填并自动分配唯一编号"
+    },
+    {
+      "id": "VEN-003",
+      "acceptance": "详情显示完整字段及活动记录"
+    },
+    {
+      "id": "VEN-004",
+      "acceptance": "编辑刷新持久化且阻止旧版本覆盖"
+    },
+    {
+      "id": "VEN-005",
+      "acceptance": "仅允许合法状态流转并记录审计"
+    },
+    {
+      "id": "VEN-006",
+      "acceptance": "仅初始状态允许删除"
+    },
+    {
+      "id": "VEN-007",
+      "acceptance": "只读角色界面禁止写操作（演示权限）"
+    },
+    {
+      "id": "VEN-008",
+      "acceptance": "模块数据隔离和确定性重置"
+    },
+    {
+      "id": "VEN-009",
+      "acceptance": "错误可恢复且无部分写入"
+    }
+  ]
+}

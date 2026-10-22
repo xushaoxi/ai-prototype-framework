@@ -7,3 +7,5 @@ work/
 .superpowers/
 .env.local
 .DS_Store
+*.tsbuildinfo
+release/

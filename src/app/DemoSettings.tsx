@@ -9,7 +9,7 @@ export function DemoSettings({open,onClose,role,onRole,scenario,onScenario,onDat
   const {message,modal}=App.useApp();
   const inputRef=useRef<HTMLInputElement>(null);
   const [busy,setBusy]=useState(false);
-  const restore=()=>modal.confirm({title:'重置演示数据',content:'当前浏览器中的两个模块将恢复初始演示数据，已新增和修改的记录将被替换。建议先导出备份。',okText:'确认重置',cancelText:'取消',okButtonProps:{danger:true},onOk:async()=>{await api.reset();onDataChange();message.success('演示数据已重置');}});
+  const restore=()=>modal.confirm({title:'重置演示数据',content:'当前浏览器中的所有模块将恢复初始演示数据，已新增和修改的记录将被替换。建议先导出备份。',okText:'确认重置',cancelText:'取消',okButtonProps:{danger:true},onOk:async()=>{try{await api.reset();onDataChange();message.success('演示数据已重置');}catch(error){message.error(error instanceof Error?error.message:'重置失败，请稍后重试');throw error;}}});
   const backup=async()=>{setBusy(true);try{downloadText(await api.exportData(),`原型数据备份-${new Date().toISOString().slice(0,10)}.json`,'application/json');message.success('备份已导出');}catch(e){message.error(e instanceof Error?e.message:'备份失败');}finally{setBusy(false);}};
   const importFile=async(file:File)=>{
     if(file.size>2*1024*1024){message.error('备份文件不能超过 2MB');return;}

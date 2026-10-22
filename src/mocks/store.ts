@@ -123,7 +123,8 @@ export function createStore(storage: Storage | undefined = browserStorage()): Bu
       const page = query.page ?? 1; const size = query.pageSize ?? 10;
       if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(size) || size < 1 || size > 10000) fail('分页参数不合法');
       const keyword = query.keyword?.trim().toLocaleLowerCase() ?? '';
-      const base = source.filter(r => (!keyword || [r.code, r.name, r.owner].some(value => value.toLocaleLowerCase().includes(keyword))) && (!query.category || r.category === query.category));
+      const searchKeys = [...new Set(['code', 'name', 'owner', ...module.fields.filter(field => field.searchable).map(field => field.key)])];
+      const base = source.filter(r => (!keyword || searchKeys.some(key => String(r[key] ?? '').toLocaleLowerCase().includes(keyword))) && (!query.category || r.category === query.category));
       const counts = Object.fromEntries(module.statuses.map(s => [s.value, base.filter(r => r.status === s.value).length]));
       const matched = base.filter(r => !query.status || r.status === query.status); const key = query.sortBy ?? 'updatedAt'; const direction = query.sortOrder === 'asc' ? 1 : -1;
       matched.sort((a, b) => ((a[key] < b[key] ? -1 : a[key] > b[key] ? 1 : a.code.localeCompare(b.code)) * direction));
@@ -157,7 +158,7 @@ export function createStore(storage: Storage | undefined = browserStorage()): Bu
     },
     remove(moduleId, id) {
       sync();
-      const module = moduleFor(moduleId); const old = find(moduleId, id); if (old.status !== module.statuses[0].value) fail('仅草稿或待评估记录可以删除', 'DELETE_NOT_ALLOWED', 409);
+      const module = moduleFor(moduleId); const old = find(moduleId, id); if (old.status !== (module.defaultValues.status ?? module.statuses[0].value)) fail('仅初始状态的记录可以删除', 'DELETE_NOT_ALLOWED', 409);
       const next = copy(state); next.records[moduleId] = next.records[moduleId].filter(r => r.id !== id); next.history = next.history.filter(h => !(h.moduleId === moduleId && h.recordId === id)); commit(next);
     },
     reset() { sync(); commit(createSeed()); },

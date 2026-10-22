@@ -12,7 +12,7 @@ export function GuidePage() {
       {title:'业务验收',content:'按需求编号核对真实流程、失败恢复和演示限制。'},
       {title:'交付可追踪结果',content:'自动打包源码、静态构建、规范及验证证据，交给下一阶段研发。'},
     ]}/></section>
-    <section className="guide-section"><h2>开始下一个项目</h2><div className="command-card"><span>复制一份独立项目</span><code>npm run create:project -- ../my-project</code><span>增加一套标准模块</span><code>npm run generate:module -- contracts 合同台账</code><span>执行质量关口并生成交付包</span><code>npm run deliver</code></div></section>
+    <section className="guide-section"><h2>开始下一个项目</h2><div className="command-card"><span>复制一份独立项目</span><code>npm run create:project -- ../my-project</code><span>增加一套标准模块</span><code>npm run generate:module -- contracts 合同</code><span>执行质量关口并生成交付包</span><code>npm run deliver</code></div></section>
     <section className="guide-section"><h2>常见问题</h2><Collapse items={[
       {key:'data',label:'我的修改保存在哪里？',children:'演示数据按版本保存在当前浏览器的本地存储中。刷新页面会保留；更换浏览器请先在演示设置中导出 JSON。请勿使用真实敏感数据。'},
       {key:'role',label:'只读角色是真实权限系统吗？',children:'当前是 B 级业务仿真，只读用于验证界面行为。正式研发需要服务端身份认证、鉴权与审计。'},

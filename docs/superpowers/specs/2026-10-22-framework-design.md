@@ -44,3 +44,7 @@ README 中文快速开始；AGENTS.md 工具无关开发规则；docs 技术选�
 - https://element-plus.org/en-US/component/table.html
 - https://mswjs.io/docs/
 - https://playwright.dev/docs/best-practices
+
+## 实施后基线补充
+
+BusinessRecord保留公共字段，并支持由模块fields声明的string/number标量扩展；未知额外字段拒绝，text/textarea/number/select/date按元数据校验。ModuleDefinition.validate是可选业务校验函数，在新增、编辑、状态变更和导入时执行；所有表单日期统一序列化。searchable额外字段参与查询，删除判断初始状态值而非状态数组排序。新增注册模块可迁移空分区，已有记录新增必填字段需业务迁移。快照持久化/备份均2MB，顺序多窗口同步；超限原子失败。源代码及锁文件为实际精确接口依据。

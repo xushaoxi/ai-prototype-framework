@@ -27,6 +27,7 @@ export function LedgerPage({module,role,scenario,revision}:{module:ModuleDefinit
   const [history,setHistory]=useState<AuditEntry[]>([]);
   const [historyLoading,setHistoryLoading]=useState(false);
   const [historyError,setHistoryError]=useState('');
+  const detailLatest=useRef(0);
   const [exporting,setExporting]=useState(false);
   const latest=useRef(0);
   const readOnly=role==='viewer';
@@ -49,9 +50,10 @@ export function LedgerPage({module,role,scenario,revision}:{module:ModuleDefinit
   const filter=()=>setQuery(current=>({...current,keyword:keyword.trim()||undefined,category,page:1}));
   const reset=()=>{setKeyword('');setCategory(undefined);setQuery({page:1,pageSize:10,sortBy:'updatedAt',sortOrder:'desc'});};
   const showDetail=async(record:BusinessRecord)=>{
+    const request=++detailLatest.current;
     setDetail(record);setHistory([]);setHistoryError('');setHistoryLoading(true);
-    try {const [fresh,entries]=await Promise.all([api.get(module.id,record.id),api.history(module.id,record.id)]);setDetail(current=>current?.id===record.id?fresh:current);setHistory(entries);}
-    catch(e){setHistoryError(errorText(e));}finally {setHistoryLoading(false);}
+    try {const [fresh,entries]=await Promise.all([api.get(module.id,record.id),api.history(module.id,record.id)]);if(request===detailLatest.current){setDetail(fresh);setHistory(entries);}}
+    catch(e){if(request===detailLatest.current)setHistoryError(errorText(e));}finally {if(request===detailLatest.current)setHistoryLoading(false);}
   };
   const save=async(input:SaveInput)=>{
     if(readOnly||savingRef.current)return;
@@ -60,7 +62,7 @@ export function LedgerPage({module,role,scenario,revision}:{module:ModuleDefinit
       if(formRecord)await api.update(module.id,formRecord.id,input);else await api.create(module.id,input);
       setFormRecord(undefined);message.success(formRecord?'修改已保存':`${module.singularName}已新增`);
       setQuery(current=>({...current,page:1}));await load();
-    }catch(e){message.error(errorText(e));}finally{savingRef.current=false;setSaving(false);}
+    }catch(e){message.error(errorText(e));throw e;}finally{savingRef.current=false;setSaving(false);}
   };
   const perform=(record:BusinessRecord,key:string)=>{
     if(readOnly)return;
@@ -100,6 +102,6 @@ export function LedgerPage({module,role,scenario,revision}:{module:ModuleDefinit
     </section>
     <p className="workspace-footnote">数据仅存储于当前浏览器 · 可随时重置演示数据</p>
     {formRecord!==undefined?<RecordForm key={formRecord?.id??'new'} module={module} record={formRecord} onCancel={()=>{if(!saving)setFormRecord(undefined);}} onSave={save} saving={saving}/>:null}
-    {detail?<RecordDetail module={module} record={detail} history={history} loading={historyLoading} error={historyError} onClose={()=>setDetail(null)} extra={detailExtensions[module.id]}/>:null}
+    {detail?<RecordDetail module={module} record={detail} history={history} loading={historyLoading} error={historyError} onClose={()=>{detailLatest.current++;setDetail(null);}} extra={detailExtensions[module.id]}/>:null}
   </>;
 }

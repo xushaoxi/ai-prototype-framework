@@ -1,0 +1,17 @@
+import {App,Button,Space,Tag} from 'antd';
+import {useRef,useState} from 'react';
+import {findPattern} from './catalog';
+import {relatedPatterns} from './recipes';
+import {DataPatterns} from './DataPatterns';
+import {FormPatterns} from './FormPatterns';
+import {AdminPatterns} from './AdminPatterns';
+import {usePatternService} from '../../core/patterns/service';
+import {downloadText} from '../../core/export-csv';
+import './patterns.css';
+export function PatternPage({id,active}:{id:string;active:boolean}){
+ const patternApi=usePatternService();
+ const pattern=findPattern(id);const {message,modal}=App.useApp();const input=useRef<HTMLInputElement>(null);const [busy,setBusy]=useState(false);
+ if(!pattern)return null;
+ const reset=()=>modal.confirm({title:'重置模板数据？',content:'将清除所有新页面模板的演示修改、草稿和文件元数据。资产与供应商台账不受影响。建议先备份模板数据。',focusable:{autoFocusButton:'cancel'},okText:'确认重置模板',cancelText:'取消',okButtonProps:{danger:true},onOk:async()=>{setBusy(true);try{let version=1;try{version=(await patternApi.get()).version;}catch{/* A corrupt pattern snapshot can be explicitly reset. */}await patternApi.act(version,{type:'reset'});window.dispatchEvent(new Event('pattern-data-changed'));message.success('模板数据已重置');}catch(e){message.error(e instanceof Error?e.message:'重置失败');throw e;}finally{setBusy(false);}}});
+ return <div className="pattern-page"><div className="pattern-section-title"><h1>{pattern.title}</h1><Button href="#/patterns">返回组合目录</Button></div><nav aria-label="相关结构变体"><Space wrap>{relatedPatterns(id).map(item=><Button type="link" key={item.id} href={`#/patterns/${item.id}`} aria-current={item.id===id?'page':undefined}>{item.title}</Button>)}</Space></nav><details className="pattern-tools"><summary>适用说明与演示边界</summary><p>{pattern.purpose}。<Tag color="gold">独立 Mock 仿真</Tag>数据与标准台账隔离；身份、权限与文件服务均为演示仿真。</p></details><details className="pattern-tools"><summary>演示数据工具</summary><Space wrap><Button onClick={()=>window.dispatchEvent(new Event('pattern-data-changed'))}>刷新模板</Button><Button disabled={busy} onClick={async()=>{setBusy(true);try{downloadText(JSON.stringify(await patternApi.get(),null,2),'后台模板数据备份.json','application/json');}catch(e){message.error(e instanceof Error?e.message:'备份失败');}finally{setBusy(false);}}}>备份模板数据</Button><Button disabled={busy} onClick={()=>input.current?.click()}>恢复模板备份</Button><Button danger disabled={busy} onClick={reset}>重置模板数据</Button></Space><input ref={input} hidden type="file" accept=".json,application/json" aria-label="选择模板备份" onChange={async event=>{const file=event.target.files?.[0];event.target.value='';if(!file)return;try{if(file.size>2*1024*1024)throw new Error('备份不能超过2MB');const value:unknown=JSON.parse(await file.text());modal.confirm({title:'恢复模板备份？',content:'完整校验后将覆盖本模式库的演示数据，不会影响原有台账。校验失败保留当前数据。',focusable:{autoFocusButton:'cancel'},okText:'确认恢复模板',cancelText:'取消',onOk:async()=>{let version=1;try{version=(await patternApi.get()).version;}catch{/* Recovery is also available for a corrupt snapshot. */}try{await patternApi.restore(version,value);window.dispatchEvent(new Event('pattern-data-changed'));message.success('模板备份已恢复');}catch(e){message.error(e instanceof Error?e.message:'恢复失败');throw e;}}});}catch(e){message.error(e instanceof Error?e.message:'备份无法读取');}}}/></details>{pattern.family==='data'?<DataPatterns patternId={id} active={active}/>:pattern.family==='form'?<FormPatterns patternId={id} active={active}/>:<AdminPatterns patternId={id} active={active}/>}</div>;
+}

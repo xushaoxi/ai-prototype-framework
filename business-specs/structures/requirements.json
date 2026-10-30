@@ -1,0 +1,40 @@
+{
+  "id": "structures",
+  "name": "复杂页面结构有限演示",
+  "requirements": [
+    {
+      "id": "STR-01",
+      "description": "顺序阶段支持阻塞、恢复、推进、重开及中文事件历史；阻塞不可推进"
+    },
+    {
+      "id": "STR-02",
+      "description": "任务日期、进度、层级环与版本校验由store实施，失败原子回滚"
+    },
+    {
+      "id": "STR-03",
+      "description": "布局和报表配置整份验证后保存，草稿取消不修改已存配置"
+    },
+    {
+      "id": "STR-04",
+      "description": "持久化失败不提交内存，保留输入供重试"
+    },
+    {
+      "id": "STR-05",
+      "description": "损坏快照阻断读取，显式重置仅影响复杂结构命名空间"
+    },
+    {
+      "id": "STR-06",
+      "description": "拒绝未知字段、过长标识、未知动作、无效关系和循环任务"
+    },
+    {
+      "id": "STR-07",
+      "description": "返回快照为副本，重置不修改台账和旧模式数据"
+    },
+    {
+      "id": "STR-HTTP",
+      "description": "HTTP错误码、旧版本与非法请求验证不绕过store"
+    }
+  ],
+  "boundary": "本地仿真，无审批服务、自动调度、真实认证和文件服务。详情及图谱是有限示例，任务父项独立计数和进度不自动汇总；不适用PAGE-003查询台账容器。报表支持任务字段选择顺序/别名与最多8个AND文本包含/等于、进度数值下限条件，不支持任意查询DSL。",
+  "acceptanceEvidence": "docs/design/workbench-capability-matrix.md"
+}

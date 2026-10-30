@@ -1,12 +1,15 @@
-export type FieldType = 'text' | 'textarea' | 'number' | 'select' | 'date';
+export type FieldType = 'text' | 'textarea' | 'number' | 'select' | 'date' | 'radio' | 'checkbox' | 'multiselect' | 'time' | 'dateRange';
+export type FieldValue = string | number | string[];
 export interface FieldDefinition {
   key: string; label: string; type: FieldType; required?: boolean;
   options?: { label: string; value: string }[];
   searchable?: boolean; inTable?: boolean; inForm?: boolean; inDetail?: boolean;
   width?: number; min?: number; max?: number; maxLength?: number;
+  placeholder?: string; help?: string; unit?: string; precision?: number;
+  fullRow?: boolean; inputMode?: 'text' | 'tel';
 }
 export interface BusinessRecord {
-  [key: string]: string | number;
+  [key: string]: FieldValue;
   id: string; code: string; name: string; status: string; owner: string;
   category: string; amount: number; date: string; notes: string;
   updatedAt: string; version: number;
@@ -17,10 +20,11 @@ export interface ModuleDefinition {
   icon: 'ledger' | 'team'; codePrefix: string; fields: FieldDefinition[];
   statuses: { value: string; label: string; color: string }[];
   actions: ActionDefinition[]; defaultValues: Partial<BusinessRecord>;
+  queryFilters?: ('dateRange' | 'status')[];
   validate?: (values: Partial<BusinessRecord>, current?: BusinessRecord) => Record<string, string>;
 }
 export interface ListQuery {
-  keyword?: string; status?: string; category?: string; page?: number; pageSize?: number;
+  keyword?: string; status?: string; category?: string; dateFrom?: string; dateTo?: string; page?: number; pageSize?: number;
   sortBy?: 'updatedAt' | 'amount' | 'date'; sortOrder?: 'asc' | 'desc';
 }
 export interface ListResult { items: BusinessRecord[]; total: number; counts: Record<string, number>; amountTotal: number }

@@ -1,31 +1,26 @@
-import { DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
-import { BusinessError } from '../types';
+import { App, Form, Modal } from 'antd';
 import { initialFormValues, serializeFormValues } from '../form-values';
-import type { BusinessRecord, FieldDefinition, ModuleDefinition, SaveInput } from '../types';
+import type { BusinessRecord, ModuleDefinition, SaveInput } from '../types';
+import { RecordFormFields } from './RecordFormFields';
+import {useUnsavedForm} from './useUnsavedForm';
+import {useFormFeedback} from './useFormFeedback';
+import {FormValidationSummary} from './FormValidationSummary';
 
-function fieldControl(field:FieldDefinition) {
-  if(field.type==='select') return <Select options={field.options} placeholder={`请选择${field.label}`}/>;
-  if(field.type==='number') return <InputNumber min={field.min} max={field.max} precision={2} style={{width:'100%'}} placeholder={`请输入${field.label}`}/>;
-  if(field.type==='date') return <DatePicker style={{width:'100%'}} format="YYYY-MM-DD" allowClear={!field.required}/>;
-  if(field.type==='textarea') return <Input.TextArea rows={3} maxLength={field.maxLength} showCount placeholder={`请输入${field.label}`}/>;
-  return <Input maxLength={field.maxLength} placeholder={`请输入${field.label}`}/>;
-}
-
-export function RecordForm({module,record,onCancel,onSave,saving}:{module:ModuleDefinition;record:BusinessRecord|null;onCancel:()=>void;onSave:(input:SaveInput)=>Promise<void>;saving:boolean}) {
+export function RecordForm({module,record,onCancel,onSave,saving,active=true}:{active?:boolean;module:ModuleDefinition;record:BusinessRecord|null;onCancel:()=>void;onSave:(input:SaveInput)=>Promise<void>;saving:boolean}) {
   const [form]=Form.useForm();
+  const feedback=useFormFeedback(form);
+  const {message}=App.useApp();
+  const busy=saving||feedback.submitting;
   const initial=initialFormValues(module,record??{});
-  const submit=async()=>{
-    const values=await form.validateFields();
+  const unsaved=useUnsavedForm(form,module,initial,busy);
+  const submit=()=>feedback.submit(async values=>{
     await onSave({...serializeFormValues(module,values),...(record?{version:record.version}:{})});
-  };
-  return <Modal title={`${record?'编辑':'新增'}${module.singularName}`} open onCancel={onCancel} onOk={()=>void submit().catch(error=>{if(error instanceof BusinessError&&error.fields)form.setFields(Object.entries(error.fields).map(([name,message])=>({name,errors:[message]})));})} okText="保存" cancelText="取消" confirmLoading={saving} mask={{closable:false}} destroyOnHidden width={620}>
+  },error=>{message.error(error instanceof Error?error.message:'保存失败，请重试');});
+  return <Modal title={`${record?'编辑':'新增'}${module.singularName}`} open={active} focusable={{focusTriggerAfterClose:active}} onCancel={()=>unsaved.request(onCancel)} onOk={()=>void submit()} okText="保存" okButtonProps={{'aria-label':'保存'}} cancelText="取消" confirmLoading={busy} cancelButtonProps={{disabled:busy}} closable={!busy} keyboard={!busy} mask={{closable:false}} width={620} style={{top:24}} styles={{body:{maxHeight:'calc(100dvh - 220px)',overflowY:'auto',paddingRight:4}}}>
     <p className="form-intro">{record?'修改业务信息，编号与状态由系统维护。':'填写基本信息，保存后可在台账中继续管理。'}</p>
-    <Form form={form} layout="vertical" initialValues={initial} requiredMark="optional" disabled={saving}>
-      <div className="form-grid">{module.fields.filter(field=>field.inForm!==false).map(field=><Form.Item key={field.key} name={field.key} label={field.label} className={field.type==='textarea'?'form-full':undefined} rules={[
-        ...(field.required?[{required:true,message:`${field.type==='select'?'请选择':'请输入'}${field.label}`}]:[]),
-        ...(field.type==='text'&&field.required?[{whitespace:true,message:`请输入${field.label}`}]:[]),
-        ...(field.maxLength?[{max:field.maxLength,message:`最多${field.maxLength}个字符`}]:[]),
-      ]}>{fieldControl(field)}</Form.Item>)}</div>
+    <Form name={`${module.id}-record-form`} form={form} layout="vertical" initialValues={initial} requiredMark disabled={busy} validateTrigger={[]} onValuesChange={feedback.onValuesChange} onFieldsChange={feedback.onFieldsChange}>
+      <FormValidationSummary count={feedback.errorCount} onLocate={feedback.focusFirstError}/>
+      <RecordFormFields module={module} originalValues={record??undefined}/>
     </Form>
   </Modal>;
 }

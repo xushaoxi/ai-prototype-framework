@@ -13,6 +13,7 @@ try {
     const spec = specs.find(item => item.id === module.id);
     if (!spec || spec.schemaVersion !== 1 || spec.template !== 'T01') throw new Error(`缺少有效规范：${module.id}`);
     const expected = {
+      queryFilters: module.queryFilters,
       id: module.id, name: module.name, codePrefix: module.codePrefix,
       fields: module.fields.map(field => ({ ...field, required: !!field.required })),
       statuses: module.statuses.map(({ value, label }) => ({ value, label })),
@@ -23,7 +24,9 @@ try {
     if (statuses.size !== module.statuses.length || !statuses.has(module.defaultValues.status)) throw new Error(`无效状态：${module.id}`);
     const fields = new Set(); const actions = new Set();
     for (const field of module.fields) {
-      if (fields.has(field.key) || !['text', 'textarea', 'number', 'select', 'date'].includes(field.type)) throw new Error(`无效字段：${module.id}.${field.key}`);
+      if (fields.has(field.key) || !['text', 'textarea', 'number', 'select', 'date', 'radio', 'checkbox', 'multiselect', 'time', 'dateRange'].includes(field.type)) throw new Error(`无效字段：${module.id}.${field.key}`);
+      if(field.precision!==undefined&&(!Number.isInteger(field.precision)||field.precision<0||field.precision>10))throw new Error(`无效小数精度：${module.id}.${field.key}`);
+      if(['select','radio','checkbox','multiselect'].includes(field.type)&&(!Array.isArray(field.options)||!field.options.length||field.options.some(option=>typeof option.label!=='string'||typeof option.value!=='string')||new Set(field.options.map(option=>option.value)).size!==field.options.length))throw new Error(`无效选项：${module.id}.${field.key}`);
       fields.add(field.key);
     }
     for (const action of module.actions) {

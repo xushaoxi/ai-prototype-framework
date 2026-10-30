@@ -36,3 +36,16 @@ export const api = {
   async exportData() { return (await request<{ text: string }>('/api/demo/export')).text; },
   importData(text: string) { return request<void>('/api/demo/import', 'POST', { text }); },
 };
+
+// Independent, explicitly simulated backend-pattern data domain.
+export const patternApi={
+  get:()=>request<import('./patterns/types').PatternSnapshot>('/api/patterns/snapshot'),
+  restore:(version:number,snapshot:unknown)=>request<import('./patterns/types').PatternSnapshot>('/api/patterns/actions','POST',{version,action:{type:'backup.restore',snapshot}}),
+  act:(version:number,action:import('./patterns/types').PatternAction)=>request<import('./patterns/types').PatternSnapshot>('/api/patterns/actions','POST',{version,action}),
+};
+
+export const structureApi={
+ get:()=>request<import('./structures/types').StructureSnapshot>('/api/structures/snapshot'),
+ act:(version:number,action:import('./structures/types').StructureAction)=>request<import('./structures/types').StructureSnapshot>('/api/structures/actions','POST',{version,action}),
+ reset:()=>request<import('./structures/types').StructureSnapshot>('/api/structures/reset','POST'),
+};

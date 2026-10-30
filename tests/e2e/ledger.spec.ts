@@ -7,28 +7,34 @@ test.beforeEach(async ({page}) => {
 });
 
 test('AST-001/008 组合查询、空态和模块隔离',async({page})=>{
-  await expect(page.getByTestId('summary-total')).toHaveText('36');
-  await page.getByPlaceholder('搜索名称、编号或负责人').fill('不存在的资产');
+  await expect(page.getByRole('tab',{name:'全部 36',exact:true})).toBeVisible();
+  await page.getByRole('textbox',{name:'关键词',exact:true}).fill('不存在的资产');
   await page.getByRole('button',{name:'查询',exact:true}).click();
   await expect(page.getByText('暂无符合条件的记录')).toBeVisible();
   await page.getByRole('button',{name:'重置',exact:true}).click();
-  await expect(page.getByTestId('summary-total')).toHaveText('36');
-  await page.getByRole('link',{name:'供应商台账'}).click();
-  await expect(page.getByRole('heading',{name:'供应商台账',exact:true})).toBeVisible();
-  await expect(page.getByTestId('summary-total')).toHaveText('12');
-  await page.getByPlaceholder('搜索名称、编号或负责人').fill('VEN-2026-001');
+  await expect(page.getByRole('tab',{name:'全部 36',exact:true})).toBeVisible();
+  await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'查询表格',exact:true}).click();
+  await page.getByRole('link',{name:'供应商台账',exact:true}).click();
+  await expect(page.getByRole('tablist',{name:'已打开页面'}).getByRole('tab',{name:'供应商台账',exact:true})).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{name:'全部 12',exact:true})).toBeVisible();
+  await page.getByRole('textbox',{name:'关键词',exact:true}).fill('VEN-2026-001');
   await page.getByRole('button',{name:'查询',exact:true}).click();
-  await expect(page.getByText('VEN-2026-001')).toBeVisible();
+  await expect(page.locator('.record-code').getByText('VEN-2026-001',{exact:true})).toBeVisible();
 });
 
-test('AST-002/003/004/005 新建→编辑→详情→业务流转→刷新持久化',async({page})=>{
+test('AST-002/003/004/005 FORM-005 新建→编辑→详情→业务流转→刷新持久化',async({page})=>{
   await page.getByRole('button',{name:'新增资产',exact:true}).click();
   const dialog=page.getByRole('dialog');
+  await expect(dialog.getByText('带 * 的为必填项',{exact:true})).toBeVisible();
+  await expect(dialog.getByLabel('资产名称',{exact:true})).toHaveAttribute('aria-required','true');
+  await expect(dialog.locator('.ant-form-item-optional')).toHaveCount(0);
   await dialog.getByRole('button',{name:'保存',exact:true}).click();
   await expect(dialog.getByText('请输入资产名称')).toBeVisible();
   await dialog.getByLabel('资产名称',{exact:true}).fill('端到端测试设备');
   await dialog.getByLabel('负责人',{exact:true}).fill('测试负责人');
   await dialog.getByLabel('资产金额',{exact:true}).fill('12345');
+  await dialog.getByLabel('登记日期',{exact:true}).fill('2026-10-29');
+  await dialog.getByLabel('登记日期',{exact:true}).press('Tab');
   await dialog.getByRole('button',{name:'保存',exact:true}).click();
   await expect(dialog).toBeHidden();
   const row=page.getByRole('row').filter({hasText:'端到端测试设备'});
@@ -60,10 +66,11 @@ test('AST-007/009 只读仿真与错误恢复',async({page})=>{
   await page.getByRole('dialog').getByLabel('错误响应').check();
   await page.getByRole('dialog').getByRole('button',{name:'关闭',exact:true}).click();
   await expect(page.getByText('数据加载失败')).toBeVisible();
+  await expect(page.getByRole('tab',{name:'全部 —',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'演示设置'}).click();
   await page.getByRole('dialog').getByLabel('正常响应').check();
   await page.getByRole('dialog').getByRole('button',{name:'关闭',exact:true}).click();
-  await expect(page.getByTestId('summary-total')).toHaveText('36');
+  await expect(page.getByRole('tab',{name:'全部 36',exact:true})).toBeVisible();
 });
 
 test('UI-001 桌面与手机界面可用且无相关浏览器错误',async({page},testInfo)=>{
@@ -78,8 +85,9 @@ test('UI-001 桌面与手机界面可用且无相关浏览器错误',async({page
   await page.screenshot({path:testInfo.outputPath('mobile.png'),fullPage:true});
   await testInfo.attach('手机390',{path:testInfo.outputPath('mobile.png'),contentType:'image/png'});
   await page.getByRole('button',{name:'展开导航'}).click();
-  await page.getByRole('link',{name:'供应商台账'}).click();
-  await expect(page.getByRole('heading',{name:'供应商台账',exact:true})).toBeVisible();
+  await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'查询表格',exact:true}).click();
+  await page.getByRole('link',{name:'供应商台账',exact:true}).click();
+  await expect(page.getByRole('tablist',{name:'已打开页面'}).getByRole('tab',{name:'供应商台账',exact:true})).toHaveAttribute('aria-selected','true');
   expect(errors).toEqual([]);
 });
 
@@ -94,18 +102,22 @@ test('DATA-RECOVERY 损坏本地数据可先备份再恢复，不进入重载死
   await expect(page.getByRole('button',{name:'确认清除并恢复',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'确认清除并恢复',exact:true}).click();
   await expect(page.getByRole('heading',{name:'资产台账',exact:true})).toBeVisible();
-  await expect(page.getByTestId('summary-total')).toHaveText('36');
+  await expect(page.getByRole('tab',{name:'全部 36',exact:true})).toBeVisible();
 });
 
 test('EXPORT-002/AST-006 真实CSV与JSON备份→重置→导入→草稿删除',async({page})=>{
   await page.getByRole('button',{name:'新增资产',exact:true}).click();
   await page.getByRole('dialog').getByLabel('资产名称',{exact:true}).fill('备份往返测试设备');
   await page.getByRole('dialog').getByLabel('负责人',{exact:true}).fill('备份验证人');
+  await page.getByRole('dialog').getByLabel('资产金额',{exact:true}).fill('0');
+  await page.getByRole('dialog').getByLabel('登记日期',{exact:true}).fill('2026-10-29');
+  await page.getByRole('dialog').getByLabel('登记日期',{exact:true}).press('Tab');
   await page.getByRole('dialog').getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('dialog')).toBeHidden();
-  await expect(page.getByTestId('summary-total')).toHaveText('37');
+  await expect(page.getByRole('tab',{name:'全部 37',exact:true})).toBeVisible();
   const csvDownload=page.waitForEvent('download');
   await page.getByRole('button',{name:/导出/}).click();
+  await page.getByRole('dialog',{name:'选择导出列',exact:true}).getByRole('button',{name:'确认导出',exact:true}).click();
   const csv=await csvDownload;
   const csvPath=await csv.path();
   const csvText=await readFile(csvPath!,'utf8');
@@ -120,17 +132,17 @@ test('EXPORT-002/AST-006 真实CSV与JSON备份→重置→导入→草稿删除
   expect(JSON.parse(backupText).records.assets).toHaveLength(37);
   await page.getByRole('button',{name:/重置演示数据/}).click();
   await page.getByRole('button',{name:'确认重置',exact:true}).click();
-  await expect(page.getByTestId('summary-total')).toHaveText('36');
+  await expect(page.getByRole('tab',{name:'全部 36',exact:true})).toBeVisible();
   await page.getByLabel('选择数据备份').setInputFiles({name:'restore.json',mimeType:'application/json',buffer:Buffer.from(backupText)});
   await page.getByRole('button',{name:'确认导入',exact:true}).click();
-  await expect(page.getByTestId('summary-total')).toHaveText('37');
+  await expect(page.getByRole('tab',{name:'全部 37',exact:true})).toBeVisible();
   await page.getByRole('dialog',{name:'演示设置',exact:true}).getByRole('button',{name:'关闭',exact:true}).click();
   const row=page.getByRole('row').filter({hasText:'备份往返测试设备'});
   await row.getByRole('button',{name:'更多操作'}).click();
   await page.getByRole('menuitem',{name:'删除',exact:true}).click();
   await page.getByRole('button',{name:'确认删除',exact:true}).click();
   await expect(row).toHaveCount(0);
-  await expect(page.getByTestId('summary-total')).toHaveText('36');
+  await expect(page.getByRole('tab',{name:'全部 36',exact:true})).toBeVisible();
 });
 
 test('DETAIL-001 过期详情请求不得将A的活动记录写入B',async({page})=>{

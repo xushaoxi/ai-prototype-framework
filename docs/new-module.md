@@ -32,7 +32,11 @@ npm run generate:module -- contracts 合同
 
 ## 调整和验证
 
+所有搜索查询表格以资产台账的标准查询表格 V1 为基准，详见[设计指南 PAGE-003](design/design-guidelines.md)。常规台账复用共享 LedgerPage；按业务选择字段、筛选条件、状态、列和操作，逐项对照查询提交、条件提示、列表操作、列设置、空态、排序分页和响应式行为。业务不适用的能力或有依据的偏离须在业务规范中说明。当前尚不支持的筛选类型需要先明确业务规则和验收，再扩展共享能力；不要复制整页或假定资产的字段适用于其他模块。
+
 默认字段为编号、名称、类别、负责人、金额、日期、备注。按业务更改类别 options、标签和初始值；同步 JSON 规范。若改变状态 ID，要同步动作、初始状态与验收条件。特殊逻辑先扩展 store 校验及测试，特殊视图通过显式扩展点实现。模板模块的 validate 业务校验函数不会复制到新模块，避免继承资产专属规则；新业务规则需要显式定义并测试。
+
+表单必填标识遵守 FORM-005：通过字段 required 定义驱动红色星号与校验，表单提供“带 * 的为必填项”说明，可选字段不附加标记；新增表单保持与工作台统一。
 
 ```bash
 npm run spec:check
@@ -46,8 +50,8 @@ npm run test:e2e
 
 ## 添加独有字段与规则
 
-保留公共台账字段，按业务追加 `contactPhone`（text）、`expiry`（date）等标量字段到 ModuleDefinition.fields，并同步业务规范 JSON 中的标签、type、required、选项、范围、searchable 和显示位置。表单自动渲染，日期统一序列化为 YYYY-MM-DD；可选日期清空保存为空字符串。额外 searchable 字段参与关键词查询。声明之外的额外属性、错误类型、非法枚举会在 store 拒绝。
+保留公共台账字段，按业务追加 `contactPhone`（text）、`expiry`（date）等字段到 ModuleDefinition.fields，并同步业务规范 JSON 中的标签、type、required、选项、范围、searchable 和显示位置。FORM-006 还支持 radio、checkbox、multiselect、time 和 dateRange；多值只允许字符串数组，日期范围固定两个日期，时间为HH:mm。表单自动渲染，日期统一序列化为 YYYY-MM-DD；可选日期清空保存为空字符串，多选清空为[]。额外 searchable 字段参与关键词查询。声明之外的额外属性、错误类型、非法枚举会在 store 拒绝。
 
-`validate(values,current?)` 可返回字段错误，例如联系人规则；特殊详情组件接入 modules/extensions。新增字段类型、数组和嵌套业务对象需要单独设计与测试，V1 不提供万能配置引擎。
+`validate(values,current?)` 可返回字段错误，例如联系人规则；特殊详情组件接入 modules/extensions。除已支持的字符串数组以外的复杂值和嵌套业务对象需要单独设计与测试，V1 不提供万能配置引擎。生成器沿用当前模板字段；按新业务去除不适用的控件示例并同步规范。
 
 添加新注册模块会将已有本地快照补上空分区，不清空旧模块。给已有记录增加必填字段时，必须先备份并确定旧数据默认值/迁移策略；框架不会猜测业务值。模块定义变化后的旧备份仅在与当前已知模块和字段约束兼容时可以导入。

@@ -25,7 +25,8 @@
       "inForm": true,
       "inDetail": true,
       "maxLength": 80,
-      "width": 200
+      "width": 200,
+      "placeholder": "例如：办公笔记本电脑"
     },
     {
       "key": "category",
@@ -75,7 +76,10 @@
       "inForm": true,
       "inDetail": true,
       "min": 0,
-      "max": 999999999
+      "max": 999999999,
+      "precision": 2,
+      "unit": "元",
+      "placeholder": "最多两位小数"
     },
     {
       "key": "date",
@@ -84,7 +88,145 @@
       "required": true,
       "inTable": true,
       "inForm": true,
-      "inDetail": true
+      "inDetail": true,
+      "help": "按实际登记日期填写"
+    },
+    {
+      "key": "acquisition",
+      "label": "获取方式",
+      "type": "radio",
+      "inTable": false,
+      "inForm": true,
+      "inDetail": true,
+      "options": [
+        {
+          "label": "采购",
+          "value": "purchase"
+        },
+        {
+          "label": "租赁",
+          "value": "lease"
+        }
+      ],
+      "required": false
+    },
+    {
+      "key": "quantity",
+      "label": "数量",
+      "type": "number",
+      "inTable": false,
+      "inForm": true,
+      "inDetail": true,
+      "min": 0,
+      "max": 999999,
+      "precision": 0,
+      "unit": "台",
+      "placeholder": "填写整数",
+      "required": false
+    },
+    {
+      "key": "servicePhone",
+      "label": "联系电话",
+      "type": "text",
+      "inTable": false,
+      "inForm": true,
+      "inDetail": true,
+      "maxLength": 30,
+      "inputMode": "tel",
+      "placeholder": "例如：010-12345678",
+      "help": "按文本保存，可保留前导0和分机号",
+      "required": false
+    },
+    {
+      "key": "reminderTime",
+      "label": "提醒时间",
+      "type": "time",
+      "inTable": false,
+      "inForm": true,
+      "inDetail": true,
+      "help": "24小时制，精确到分钟",
+      "required": false
+    },
+    {
+      "key": "usage",
+      "label": "用途",
+      "type": "checkbox",
+      "inTable": false,
+      "inForm": true,
+      "inDetail": true,
+      "fullRow": true,
+      "options": [
+        {
+          "label": "办公",
+          "value": "office"
+        },
+        {
+          "label": "研发",
+          "value": "research"
+        },
+        {
+          "label": "外出",
+          "value": "travel"
+        }
+      ],
+      "help": "可以选择多项",
+      "required": false
+    },
+    {
+      "key": "tags",
+      "label": "标签",
+      "type": "multiselect",
+      "inTable": false,
+      "inForm": true,
+      "inDetail": true,
+      "fullRow": true,
+      "options": [
+        {
+          "label": "便携",
+          "value": "portable"
+        },
+        {
+          "label": "共享",
+          "value": "shared"
+        },
+        {
+          "label": "高性能",
+          "value": "performance"
+        },
+        {
+          "label": "节能",
+          "value": "efficient"
+        },
+        {
+          "label": "备用",
+          "value": "backup"
+        },
+        {
+          "label": "会议",
+          "value": "meeting"
+        },
+        {
+          "label": "培训",
+          "value": "training"
+        },
+        {
+          "label": "试用",
+          "value": "trial"
+        }
+      ],
+      "placeholder": "输入名称搜索，可选择多项",
+      "required": false
+    },
+    {
+      "key": "usagePeriod",
+      "label": "使用日期范围",
+      "type": "dateRange",
+      "inTable": false,
+      "inForm": true,
+      "inDetail": true,
+      "fullRow": true,
+      "help": "选择开始和结束日期，不包含时分秒",
+      "required": false
     },
     {
       "key": "notes",
@@ -94,6 +236,7 @@
       "inForm": true,
       "inDetail": true,
       "maxLength": 500,
+      "placeholder": "补充说明，最多500字",
       "required": false
     }
   ],
@@ -137,7 +280,7 @@
   "requirements": [
     {
       "id": "AST-001",
-      "acceptance": "关键词、状态、类别组合查询与分页正确"
+      "acceptance": "关键词、状态、类别组合查询与分页正确；关键词和类别点击查询或关键词框按Enter统一提交并回到第一页；状态标签显示计数，默认不展示重复统计卡片"
     },
     {
       "id": "AST-002",
@@ -170,6 +313,42 @@
     {
       "id": "AST-009",
       "acceptance": "错误可恢复且无部分写入"
+    },
+    {
+      "id": "AST-010",
+      "acceptance": "登记日期范围包含起止当天，支持单边边界，非法日期及倒置区间拒绝；关键词、类别、日期、状态组合查询与导出范围一致。更多筛选可展开收起，隐藏已生效条件按条件计数，状态下拉与标签联动，重置清空全部条件。"
+    },
+    {
+      "id": "AST-011",
+      "acceptance": "功能标签切换保留当前模块查询、排序、页码、展开及滚动位置，关闭重开回到初始条件；台账不重复展示大标题说明，新增放列表操作栏，对照指南在工作台顶栏。"
+    },
+    {
+      "id": "AST-012",
+      "acceptance": "支持80–600px拖动与键盘调整列宽，名称和操作列保留；显示列与宽度偏好按模块在浏览器保存并可恢复。导出单独选择至少一个列表数据列，可选隐藏列，不改变显示设置，范围遵守当前已提交查询全部页，保持CSV安全转义。"
+    },
+    {
+      "id": "AST-013",
+      "acceptance": "列设置支持拖拽及上下箭头在固定分区内调整顺序，数据列可固定左侧或右侧；顺序和固定状态按模块保存且兼容旧偏好，窄屏或空间不足时暂停固定避免遮挡，导出列顺序随列表设置。"
+    },
+    {
+      "id": "AST-014",
+      "acceptance": "查询区明确区分已生效筛选与待提交修改；可单独清除关键词、类别或日期条件，状态筛选与顶部状态标签同步；有条件的空结果提供清除筛选入口；横向溢出有提示且可键盘滚动，截断文本可聚焦查看全文。"
+    },
+    {
+      "id": "AST-015",
+      "acceptance": "新增编辑表单演示文本、单选、复选、多选下拉、整数、金额、日期、时间及日期范围，金额和日期无自动填充值；可选扩展字段兼容旧记录，选项、类型、精度、时间和范围由store校验，保存编辑与详情及备份往返一致。可选单选支持清空；拒绝稀疏数组，旧版已保存金额精度在恢复及未改金额的编辑中保持兼容，手机日期范围面板不裁切。"
+    },
+    {
+      "id": "AST-016",
+      "acceptance": "共享FORM-007：首次保存统一校验，提示错误字段数量并滚动聚焦首错；曾报错字段修改后及时复查，失败保留输入，保存中防止重复提交及当前容器关闭。三种容器示例保持一致，不写入业务记录。"
+    },
+    {
+      "id": "AST-017",
+      "acceptance": "FORM-008：按实际内容判断未保存修改，恢复初值免确认；取消、返回和关闭当前或后台标签统一确认，切换保留输入，保存期间阻止关闭；刷新使用浏览器原生提示，三种容器一致。"
     }
+  ],
+  "queryFilters": [
+    "dateRange",
+    "status"
   ]
 }

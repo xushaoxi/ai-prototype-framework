@@ -1,7 +1,8 @@
 import { delay, http, HttpResponse } from 'msw';
 import { BusinessError } from '../core/types';
 import type { ListQuery, SaveInput } from '../core/types';
-import { store } from './store';
+import { store, patternStore, structureStore } from './store';
+import type { PatternStore } from './store';
 import type { BusinessStore } from './store';
 
 async function jsonObject(request: Request): Promise<Record<string, unknown>> {
@@ -24,6 +25,7 @@ function queryFrom(url: string): ListQuery {
   const params = new URL(url).searchParams;
   return {
     keyword: params.get('keyword') ?? undefined, status: params.get('status') ?? undefined, category: params.get('category') ?? undefined,
+    dateFrom: params.get('dateFrom') ?? undefined, dateTo: params.get('dateTo') ?? undefined,
     page: params.has('page') ? Number(params.get('page')) : undefined, pageSize: params.has('pageSize') ? Number(params.get('pageSize')) : undefined,
     sortBy: (params.get('sortBy') ?? undefined) as ListQuery['sortBy'], sortOrder: (params.get('sortOrder') ?? undefined) as ListQuery['sortOrder'],
   };
@@ -51,4 +53,22 @@ export function createHandlers(data: BusinessStore) {
     }, true)),
   ];
 }
-export const handlers = createHandlers(store);
+export function createPatternHandlers(data: PatternStore) {
+  return [
+    http.get('*/api/patterns/snapshot', ({ request }) => respond(request, () => HttpResponse.json(data.get()))),
+    http.post('*/api/patterns/actions', async ({ request }) => respond(request, async () => {
+      const body = await jsonObject(request);
+      if (Object.keys(body).some(key => !['version', 'action'].includes(key))) throw new BusinessError('VALIDATION_ERROR', '请求字段不正确', 400);
+      return HttpResponse.json(data.act(body.version, body.action));
+    }, ['reset', 'backup.restore'].includes(await request.clone().json().then((value: unknown) => {
+      if (typeof value !== 'object' || value === null || !('action' in value) || typeof value.action !== 'object' || value.action === null || !('type' in value.action) || typeof value.action.type !== 'string') return '';
+      return value.action.type;
+    }).catch(() => '')))),
+  ];
+}
+export function createStructureHandlers(data:ReturnType<typeof import('./store').createStructureStore>){return [
+ http.get('*/api/structures/snapshot',({request})=>respond(request,()=>HttpResponse.json(data.get()))),
+ http.post('*/api/structures/actions',({request})=>respond(request,async()=>{const body=await jsonObject(request);if(Object.keys(body).some(key=>!['version','action'].includes(key)))throw new BusinessError('VALIDATION_ERROR','请求字段不正确',400);return HttpResponse.json(data.act(body.version,body.action));})),
+ http.post('*/api/structures/reset',({request})=>respond(request,()=>HttpResponse.json(data.reset()),true)),
+];}
+export const handlers = [...createHandlers(store), ...createPatternHandlers(patternStore), ...createStructureHandlers(structureStore)];

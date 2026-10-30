@@ -1,0 +1,22 @@
+.component-examples{padding:var(--space-28);max-width:1200px;margin:0 auto;line-height:1.65;overflow-wrap:anywhere}
+.component-examples h1{font-size:var(--font-26);margin:0 0 var(--space-10);line-height:1.4}
+.component-examples h2{font-size:var(--font-18);margin:0 0 var(--space-10)}
+.component-examples p{margin:var(--space-8) 0 var(--space-16)}
+.component-examples-eyebrow{font-size:var(--font-12);color:var(--color-text-secondary);letter-spacing:.08em}
+.component-examples>section,.component-examples-grid{border-top:1px solid var(--color-border-subtle);margin-top:var(--space-24);padding-top:var(--space-24)}
+.component-examples-muted{color:var(--color-text-secondary);font-size:var(--font-13)}
+.component-examples-feedback{min-height:26px;margin-top:var(--space-12)}
+.component-examples-preview{padding:var(--space-24);margin-top:var(--space-20);border:1px solid var(--color-border-subtle);border-radius:var(--radius-panel);min-height:170px;display:grid;align-content:center}
+.component-examples-preview>.ant-empty{text-align:center;margin:0}
+.component-examples-record{display:flex;gap:var(--space-16);align-items:center}
+.component-examples-record p{margin:var(--space-4) 0 0;color:var(--color-text-secondary)}
+.component-examples-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-32)}
+.component-examples-values{margin:0}
+.component-examples-values>div{display:flex;justify-content:space-between;gap:var(--space-16);padding:var(--space-8) 0;border-bottom:1px solid var(--color-surface-muted)}
+.component-examples-values dt{color:var(--color-text-secondary)}
+.component-examples-values dd{margin:0;font-variant-numeric:tabular-nums;text-align:right}
+.component-examples-swatches{display:flex;flex-wrap:wrap;gap:var(--space-16);margin-top:var(--space-16)}
+.component-examples-swatches span{display:grid;gap:var(--space-4);font-size:var(--font-12)}
+.component-examples-swatches i{width:40px;height:24px;border-radius:var(--radius-small);border:1px solid var(--color-border-subtle)}
+.component-examples-swatches code{font-size:var(--font-11)}
+@media(max-width:640px){.component-examples{padding:var(--space-18)}.component-examples h1{font-size:var(--font-22)}.component-examples-grid{grid-template-columns:1fr;gap:var(--space-24)}.component-examples-preview{padding:var(--space-16)}.component-examples .ant-alert{flex-wrap:wrap;gap:var(--space-8)}}

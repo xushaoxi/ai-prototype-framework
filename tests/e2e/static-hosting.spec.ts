@@ -22,11 +22,13 @@ test.beforeAll(async()=>{
 test.afterAll(async()=>{await new Promise<void>((done,reject)=>server.close(error=>error?reject(error):done()));});
 test('HOSTING-001 静态子目录中Mock仍能拦截、创建和刷新',async({page})=>{
   await page.goto(base+'#/vendors');
-  await expect(page.getByTestId('summary-total')).toHaveText('12');
+  await expect(page.getByRole('tab',{name:'全部 12',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'新增供应商',exact:true}).click();
   const dialog=page.getByRole('dialog');
   await dialog.getByLabel('供应商名称',{exact:true}).fill('静态部署测试供应商');
   await dialog.getByLabel('对接人',{exact:true}).fill('部署验证');
+  await dialog.getByLabel('登记日期',{exact:true}).fill('2026-10-29');
+  await dialog.getByLabel('登记日期',{exact:true}).press('Tab');
   await dialog.getByRole('button',{name:'保存',exact:true}).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('row').filter({hasText:'静态部署测试供应商'})).toBeVisible();

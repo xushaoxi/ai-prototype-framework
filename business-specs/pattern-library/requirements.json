@@ -1,0 +1,536 @@
+{
+  "schemaVersion": 1,
+  "id": "backend-pattern-library",
+  "name": "后台通用原型模式库",
+  "template": "typed-pattern-composition",
+  "scope": "有限后台模板与本地业务仿真，非真实认证/服务端权限/流程引擎",
+  "catalogSource": "src/app/patterns/catalog.ts",
+  "typeSource": "src/core/patterns/types.ts",
+  "ruleSource": "src/mocks/store.ts",
+  "api": {
+    "read": {
+      "method": "GET",
+      "path": "/api/patterns/snapshot",
+      "response": "PatternSnapshot"
+    },
+    "write": {
+      "method": "POST",
+      "path": "/api/patterns/actions",
+      "body": [
+        "version",
+        "action"
+      ],
+      "response": "PatternSnapshot"
+    }
+  },
+  "storage": {
+    "key": "prototype-workbench:patterns:v1",
+    "maxBytes": 2097152,
+    "isolatedFrom": "T01 registry module snapshot",
+    "concurrency": "optimistic snapshot version; local browser simulation, no cross-process transaction guarantee"
+  },
+  "snapshotCollections": [
+    "records",
+    "deletedRecords",
+    "nodes",
+    "roles",
+    "users",
+    "tasks",
+    "settings",
+    "notices",
+    "audit",
+    "drafts",
+    "files"
+  ],
+  "actions": [
+    "record.save",
+    "record.delete",
+    "record.restore",
+    "record.purge",
+    "record.status",
+    "record.import",
+    "node.save",
+    "node.delete",
+    "role.save",
+    "role.delete",
+    "user.save",
+    "user.delete",
+    "task.decide",
+    "settings.save",
+    "notice.read",
+    "draft.save",
+    "draft.delete",
+    "file.add",
+    "file.delete",
+    "reset",
+    "backup.restore"
+  ],
+  "recordTransitions": [
+    {
+      "from": "draft",
+      "to": "active"
+    },
+    {
+      "from": "active",
+      "to": "archived"
+    },
+    {
+      "from": "archived",
+      "to": "draft"
+    }
+  ],
+  "approvalTransitions": [
+    {
+      "from": "pending",
+      "to": "approved"
+    },
+    {
+      "from": "pending",
+      "to": "rejected",
+      "requires": "nonempty comment"
+    }
+  ],
+  "templates": [
+    {
+      "id": "advanced-table",
+      "name": "高级表格",
+      "route": "#/patterns/advanced-table"
+    },
+    {
+      "id": "tree-table",
+      "name": "树形表格",
+      "route": "#/patterns/tree-table"
+    },
+    {
+      "id": "card-list",
+      "name": "卡片列表",
+      "route": "#/patterns/card-list"
+    },
+    {
+      "id": "master-detail",
+      "name": "主从工作区",
+      "route": "#/patterns/master-detail"
+    },
+    {
+      "id": "record-detail",
+      "name": "分组详情",
+      "route": "#/patterns/record-detail"
+    },
+    {
+      "id": "import",
+      "name": "数据导入",
+      "route": "#/patterns/import"
+    },
+    {
+      "id": "recycle",
+      "name": "回收站",
+      "route": "#/patterns/recycle"
+    },
+    {
+      "id": "approval",
+      "name": "审批工作台",
+      "route": "#/patterns/approval"
+    },
+    {
+      "id": "tasks",
+      "name": "待办任务",
+      "route": "#/patterns/tasks"
+    },
+    {
+      "id": "grouped-form",
+      "name": "分组表单",
+      "route": "#/patterns/grouped-form"
+    },
+    {
+      "id": "step-form",
+      "name": "分步表单",
+      "route": "#/patterns/step-form"
+    },
+    {
+      "id": "detail-form",
+      "name": "明细录入",
+      "route": "#/patterns/detail-form"
+    },
+    {
+      "id": "drafts",
+      "name": "草稿管理",
+      "route": "#/patterns/drafts"
+    },
+    {
+      "id": "files",
+      "name": "文件与附件",
+      "route": "#/patterns/files"
+    },
+    {
+      "id": "organization",
+      "name": "组织管理",
+      "route": "#/patterns/organization"
+    },
+    {
+      "id": "users",
+      "name": "用户管理",
+      "route": "#/patterns/users"
+    },
+    {
+      "id": "roles",
+      "name": "角色与权限",
+      "route": "#/patterns/roles"
+    },
+    {
+      "id": "dashboard",
+      "name": "仪表盘",
+      "route": "#/patterns/dashboard"
+    },
+    {
+      "id": "settings",
+      "name": "系统设置",
+      "route": "#/patterns/settings"
+    },
+    {
+      "id": "account",
+      "name": "个人资料",
+      "route": "#/patterns/account"
+    },
+    {
+      "id": "messages",
+      "name": "消息中心",
+      "route": "#/patterns/messages"
+    },
+    {
+      "id": "audit",
+      "name": "操作日志",
+      "route": "#/patterns/audit"
+    },
+    {
+      "id": "login",
+      "name": "登录仿真",
+      "route": "#/patterns/login"
+    },
+    {
+      "id": "results",
+      "name": "结果与异常页",
+      "route": "#/patterns/results"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "PAT-LIB-001",
+      "title": "目录与工作台接入",
+      "actions": [],
+      "acceptance": [
+        "模板目录包含且仅包含catalog的24个模板ID，路由可达。",
+        "复用工作台样式、功能标签与页面现场；普通查询台账继续使用PAGE-003。",
+        "NAV-002：按规范与基础、页面结构、组合与反馈浅层分组，主菜单只保留结构代表与能力组合目录，变体通过目录及页面相关结构链接可发现；内置台账合并为查询表格入口，业务变体在查询页可发现，旧地址兼容；自定义模块保留入口，桌面与手机共享顺序，长菜单独立滚动，当前页唯一高亮。"
+      ],
+      "testFiles": [
+        "tests/e2e/data-patterns.spec.ts",
+        "tests/e2e/admin-patterns.spec.ts",
+        "tests/e2e/form-patterns.spec.ts",
+        "tests/e2e/sidebar-navigation.spec.ts"
+      ],
+      "verificationNote": "目录、链接和窄屏需人工复核；浏览器测试覆盖核心流程而非逐模板完整排列。"
+    },
+    {
+      "id": "PAT-LIB-002",
+      "title": "共享HTTP与隔离快照",
+      "actions": [
+        "record.save",
+        "record.delete",
+        "record.restore",
+        "record.purge",
+        "record.status",
+        "record.import",
+        "node.save",
+        "node.delete",
+        "role.save",
+        "role.delete",
+        "user.save",
+        "user.delete",
+        "task.decide",
+        "settings.save",
+        "notice.read",
+        "draft.save",
+        "draft.delete",
+        "file.add",
+        "file.delete",
+        "reset",
+        "backup.restore"
+      ],
+      "acceptance": [
+        "页面通过patternApi与MSW操作store，不另建UI业务状态源。",
+        "使用独立存储键；读取返回副本；跨实例重读；旧版本拒绝覆盖。",
+        "所有提交先校验及持久化，成功后提交内存；持久化失败不改变业务数据。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-store.test.ts",
+        "tests/integration/pattern-api.test.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-003",
+      "title": "高级列表与完整编辑",
+      "actions": [
+        "record.save"
+      ],
+      "acceptance": [
+        "查询、卡片、树表和主从展示同一记录域。",
+        "行内与弹窗编辑包含details的记录时保留明细附件并同步公共字段；失败保留输入。",
+        "分页选择可跨页保存，查询变化清空；导出按当前查询或所选记录且转义公式。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-import.test.ts",
+        "tests/e2e/data-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-004",
+      "title": "状态与原子批量",
+      "actions": [
+        "record.status",
+        "record.delete"
+      ],
+      "acceptance": [
+        "新记录必须draft；普通编辑不可改状态；仅draft→active→archived→draft。",
+        "只有草稿能删除；批量包含非法状态或不存在ID时全批不改变数据。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-store.test.ts",
+        "tests/e2e/data-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-005",
+      "title": "导入与字段映射",
+      "actions": [
+        "record.import"
+      ],
+      "acceptance": [
+        "支持UTF-8 CSV与XLSX第一工作表；旧.xls提示另存.xlsx；最多500行、2MB。",
+        "五个必填字段映射唯一、标题不空不重复，逐行校验列数、名称、负责人、类别、金额与真实日期。",
+        "预览有错不提交；领域再次完整校验；导入为草稿；失败全批回滚。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-import.test.ts",
+        "tests/domain/pattern-store.test.ts",
+        "tests/e2e/data-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-006",
+      "title": "回收站",
+      "actions": [
+        "record.delete",
+        "record.restore",
+        "record.purge"
+      ],
+      "acceptance": [
+        "仅本模式域草稿进入回收站，恢复保留数据与标识。",
+        "永久清除需危险确认；原T01删除规则与记录不变。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-store.test.ts",
+        "tests/e2e/data-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-007",
+      "title": "复杂表单与条件规则",
+      "actions": [
+        "record.save"
+      ],
+      "acceptance": [
+        "同一AdvancedRecordForm支持分组、分步、明细；输入和步骤保持现场。",
+        "特殊申请原因必填；明细名称非空、数量正整数、单价非负且有限；真实日期有效。",
+        "顶层记录与details公共字段一致；提交真实新增记录而非仅提示成功。"
+      ],
+      "testFiles": [
+        "tests/domain/form-patterns.test.ts",
+        "tests/domain/pattern-store.test.ts",
+        "tests/e2e/form-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-008",
+      "title": "草稿与未保存保护",
+      "actions": [
+        "draft.save",
+        "draft.delete"
+      ],
+      "acceptance": [
+        "草稿允许必填项未完成但校验完整结构、数值范围、文件安全。",
+        "暂存后刷新可读取并载入、删除；取消清空/离开可继续编辑。",
+        "保存锁防重复提交，保存失败保留输入。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-store.test.ts",
+        "tests/e2e/form-patterns.spec.ts",
+        "tests/e2e/admin-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-009",
+      "title": "文件元数据",
+      "actions": [
+        "file.add",
+        "file.delete",
+        "record.save",
+        "draft.save"
+      ],
+      "acceptance": [
+        "不保存或上传内容；校验ID、名称、MIME与扩展名、正整数大小，单个不超过5MiB。",
+        "页面允许PDF/PNG/JPEG/CSV，领域另允许TXT/XLSX；表单最多5个。",
+        "表单与草稿保存原子登记文件；相同ID不同元数据拒绝；记录/回收站/草稿引用文件拒绝删除。"
+      ],
+      "testFiles": [
+        "tests/domain/form-patterns.test.ts",
+        "tests/domain/pattern-store.test.ts",
+        "tests/e2e/form-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-010",
+      "title": "组织用户角色",
+      "actions": [
+        "node.save",
+        "node.delete",
+        "role.save",
+        "role.delete",
+        "user.save",
+        "user.delete"
+      ],
+      "acceptance": [
+        "组织父级存在且无循环；有子组织或用户引用不能删除。",
+        "角色权限仅白名单，scope为all/department/self；被使用角色拒绝删除。",
+        "用户邮箱、组织和角色引用有效；新增编辑启停后重新读取和刷新保持。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-store.test.ts",
+        "tests/e2e/admin-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-011",
+      "title": "审批与待办",
+      "actions": [
+        "task.decide"
+      ],
+      "acceptance": [
+        "审批仅pending允许处理；decision仅approved/rejected；驳回意见非空。",
+        "重复审批拒绝；待办仅展示pending，可按处理人筛选。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-store.test.ts",
+        "tests/integration/pattern-api.test.ts",
+        "tests/e2e/admin-patterns.spec.ts"
+      ],
+      "verificationNote": "领域验收已覆盖审批规则；待办与审批页面仍需交付时人工操作检查，不以其他管理页测试代替。"
+    },
+    {
+      "id": "PAT-LIB-012",
+      "title": "系统配置资料消息与审计",
+      "actions": [
+        "settings.save",
+        "user.save",
+        "notice.read"
+      ],
+      "acceptance": [
+        "保存设置、用户资料、已读状态后重新读取保持。",
+        "成功业务写入追加审计；可按类型与摘要查询。",
+        "仪表盘由快照派生状态/日期/维度与审批进度，不把日期分布表述为历史增长。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-store.test.ts",
+        "tests/e2e/admin-patterns.spec.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-013",
+      "title": "备份恢复与隔离重置",
+      "actions": [
+        "backup.restore",
+        "reset"
+      ],
+      "acceptance": [
+        "完整验证所有嵌套集合、类型、唯一性、引用、日期、附件及2MB限制。",
+        "失败保留内存及持久化；损坏模式快照可由明确确认重置/恢复。",
+        "模式工具不修改T01快照；两种备份不可互换；重置只作用本域。"
+      ],
+      "testFiles": [
+        "tests/domain/pattern-store.test.ts",
+        "tests/integration/pattern-api.test.ts"
+      ]
+    },
+    {
+      "id": "PAT-LIB-014",
+      "title": "状态与演示边界",
+      "actions": [],
+      "acceptance": [
+        "加载、空态、失败重试、保存中及适用异常按设计文档矩阵检查。",
+        "只读和角色权限明确为交互仿真，不能当作服务器授权；模式数据维护工具范围单独说明。",
+        "登录不调用认证/不保存密码/不建会话；结果页可切换success/403/404/500并恢复。"
+      ],
+      "testFiles": [
+        "tests/integration/pattern-api.test.ts",
+        "tests/e2e/admin-patterns.spec.ts",
+        "tests/e2e/form-patterns.spec.ts"
+      ],
+      "verificationNote": "数据页只读、备份工具作用范围和跨窗口冲突需人工补查。"
+    },
+    {
+      "id": "PAT-LIB-015",
+      "title": "复用与交付证据",
+      "actions": [],
+      "acceptance": [
+        "create:project创建干净副本不覆盖既有目录；generate:module只生成标准T01模块。",
+        "新模式通过typed props、API和领域规则适配，共用公共样式，不宣称万能生成器。",
+        "FORM-009：SharedForm与useSharedForm接受业务自有类型及内容插槽，统一校验反馈、同步提交锁与未保存保护；AdvancedRecordForm作为采购示例消费者，异构渲染测试不等于新业务交付。",
+        "实际运行verify、e2e和deliver；检查桌面/手机截图与控制台；skip-e2e不可标完整验收。"
+      ],
+      "testFiles": [
+        "tests/tooling/cli.test.ts",
+        "tests/e2e/data-patterns.spec.ts",
+        "tests/e2e/admin-patterns.spec.ts",
+        "tests/e2e/form-patterns.spec.ts"
+      ],
+      "verificationNote": "测试路径为验收入口，不表示本规范生成时已完成当次交付。"
+    },
+    {
+      "id": "WB-001",
+      "acceptance": "主目录按任务归并并说明适用边界；旧管理样例折叠兼容，相关变体按语义关联；演示维护工具独立；Ant与CSS共用语义主题，改动默认tokens一致传播。",
+      "actions": [],
+      "testFiles": [
+        "tests/domain/workbench-foundation.test.ts",
+        "tests/e2e/workbench-foundation.spec.ts"
+      ]
+    },
+    {
+      "id": "COMBO-001",
+      "acceptance": "纯受控总量分配草稿：逐项上限、未知引用、非负两位小数、合计超限、精确余额和禁用；实际保存须store调用校验。",
+      "actions": [],
+      "testFiles": [
+        "tests/domain/allocation.test.ts",
+        "tests/e2e/workbench-foundation.spec.ts"
+      ]
+    }
+  ],
+  "verification": {
+    "mode": "required-evidence-not-a-pass-report",
+    "automatedSpecCheck": "Existing spec:check validates root T01 business specs. This nested pattern specification needs explicit catalog/action/test-reference checking and domain/HTTP/browser execution.",
+    "commands": [
+      "npm run verify",
+      "npm run test:e2e",
+      "npm run deliver"
+    ],
+    "manual": [
+      "24 routes reachable",
+      "desktop/mobile screenshots",
+      "no relevant console errors",
+      "cross-window version conflict and refresh",
+      "readonly scope and recovery",
+      "approval/recycle/import actual persistence"
+    ],
+    "completionEvidence": "Only actual successful delivery logs and release manifest establish complete delivery; --skip-e2e is incomplete."
+  },
+  "structureCatalogSource": "src/app/patterns/recipes.ts",
+  "themeSource": "src/core/theme.ts"
+}

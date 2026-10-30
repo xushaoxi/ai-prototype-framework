@@ -17,3 +17,12 @@ describe('EXPORT-001 业务导出',()=>{
     expect(escapeCsv('a"b\nc')).toBe('"a""b\nc"');
   });
 });
+
+it('COL-002 导出选定列及顺序，拒绝空列和非列表字段',()=>{
+  const csv=recordsToCsv(assetModule,[record],['status','name']);
+  expect(csv.split('\r\n')[0]).toBe('\uFEFF"状态","资产名称"');
+  expect(csv).toContain('"使用中","测试,设备"');
+  expect(csv).not.toContain('负责人');
+  expect(()=>recordsToCsv(assetModule,[record],[])).toThrow();
+  expect(()=>recordsToCsv(assetModule,[record],['notes'])).toThrow();
+});

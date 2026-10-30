@@ -9,3 +9,9 @@ work/
 .DS_Store
 *.tsbuildinfo
 release/
+
+# Local credentials and macOS indexing metadata
+.env
+.env.*
+!.env.example
+.metadata_never_index

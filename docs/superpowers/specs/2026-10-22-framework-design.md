@@ -48,3 +48,5 @@ README 中文快速开始；AGENTS.md 工具无关开发规则；docs 技术选�
 ## 实施后基线补充
 
 BusinessRecord保留公共字段，并支持由模块fields声明的string/number标量扩展；未知额外字段拒绝，text/textarea/number/select/date按元数据校验。ModuleDefinition.validate是可选业务校验函数，在新增、编辑、状态变更和导入时执行；所有表单日期统一序列化。searchable额外字段参与查询，删除判断初始状态值而非状态数组排序。新增注册模块可迁移空分区，已有记录新增必填字段需业务迁移。快照持久化/备份均2MB，顺序多窗口同步；超限原子失败。源代码及锁文件为实际精确接口依据。
+
+2026-10-29 FORM-006 补充：经用户授权，新增资产表单展示通用控件，显式增加radio/checkbox/multiselect/time/dateRange及提示、单位、精度元数据；声明的多值字段可使用string[]，其他复杂数组及嵌套对象仍不支持。旧的可选字段缺省保持兼容；详情和备份支持新值。表单不再自动填今天日期，资产金额不再预填0。详见2026-10-29-form-controls-design.md。

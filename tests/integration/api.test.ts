@@ -47,3 +47,24 @@ describe('T01 HTTP integration: actual API + MSW + domain store', () => {
     setScenario('slow'); const before = Date.now(); expect((await api.list('assets')).total).toBe(36); expect(Date.now() - before).toBeGreaterThanOrEqual(650);
   });
 });
+
+// AST-010 / QUERY-003: dates are enforced by the HTTP/store contract.
+it('AST-010 inclusive date ranges, counts, one-sided bounds and validation', async () => {
+  const all=(await api.list('assets',{pageSize:100})).items;
+  const date=all[10].date;
+  const exact=all.filter(r=>r.date===date);
+  const result=await api.list('assets',{dateFrom:date,dateTo:date,pageSize:100});
+  expect(result.items.map(r=>r.id).sort()).toEqual(exact.map(r=>r.id).sort());
+  expect(Object.values(result.counts).reduce((a,b)=>a+b,0)).toBe(exact.length);
+  const active=await api.list('assets',{dateFrom:date,dateTo:date,status:'active'});
+  expect(active.counts).toEqual(result.counts);
+  expect(active.total).toBe(exact.filter(r=>r.status==='active').length);
+  for(const bounds of [{dateFrom:date},{dateTo:date}]){
+    const expected=all.filter(r=>!bounds.dateFrom||r.date>=bounds.dateFrom).filter(r=>!bounds.dateTo||r.date<=bounds.dateTo);
+    expect((await api.list('assets',{...bounds,pageSize:100})).total).toBe(expected.length);
+  }
+  expect((await api.list('assets',{dateFrom:'2099-01-01'})).total).toBe(0);
+  for(const params of ['dateFrom=invalid','dateTo=2026-02-30','dateFrom=2026-10-02&dateTo=2026-10-01']){
+    expect((await fetch(`http://localhost/api/modules/assets/records?${params}`)).status).toBe(400);
+  }
+});
